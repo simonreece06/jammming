@@ -1,0 +1,23 @@
+.track {
+    display: flex;    
+    justify-content: space-between;
+    border: 1px solid black;
+}
+
+.artist {
+    flex: 0.7;
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.song-length {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0.3;
+}
+
+h3{ 
+    margin-bottom: 1px;
+    margin-top: 1px;
+}

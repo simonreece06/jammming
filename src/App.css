@@ -182,3 +182,19 @@
     border-right-color: var(--border);
   }
 }
+
+
+/*MY STUFF */
+
+.results {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  margin-top: 2rem;
+}
+
+.song-table {
+  display: flex;
+  flex-direction: column;
+  width: 30%
+}
