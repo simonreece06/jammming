@@ -1,6 +1,6 @@
 
 
-const Button = ({ label}) => {
+const Button = ({ label }) => {
     return (
         <button>
             {label}

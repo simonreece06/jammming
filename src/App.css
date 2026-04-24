@@ -196,5 +196,19 @@
 .song-table {
   display: flex;
   flex-direction: column;
-  width: 30%
+  width: 40%
+}
+
+.playlist-header {
+  display: flex;
+  gap: 5px;
+}
+
+.playlist-label {
+  flex: 0.25;
+}
+.playlist-name-input {
+  flex: 0.75;
+
+
 }
