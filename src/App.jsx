@@ -63,7 +63,6 @@ function App() {
       <div className="results">
         <div className="song-table">
           <Songlist label="Results" songs={testData} />
-          <Button label="Add track"></Button>
         </div>
         <div className="song-table" >
           <div className="playlist-header">

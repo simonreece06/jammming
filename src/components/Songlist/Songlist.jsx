@@ -13,7 +13,7 @@ const Songlist = ({ label, songs}) => {
       <h3>{label}</h3>
       {songs.map(song => (
     <div key={song.id}>
-        <Track artist={song.artist} name={song.name} length={song.length} album={song.album}/>
+        <Track track={song}/>
     </div>
     ))}
     </div>
