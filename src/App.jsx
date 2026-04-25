@@ -44,11 +44,15 @@ let testData = [
 function App() {
   const [results, setResults] = useState(testData);
   const [playlistName, setPlaylistName] = useState("Your Playlist");
-  const [currentPlaylist, setCurrentPlaylist] = useState(testData);
+  const [currentPlaylist, setCurrentPlaylist] = useState([]);
 
   
   const namePlaylist = (e) => {
     setPlaylistName(e.target.value);
+  }
+
+  const addSong = (track) => {
+    setCurrentPlaylist(prev => [...prev, track]);
   }
 
 
@@ -62,7 +66,7 @@ function App() {
 
       <div className="results">
         <div className="song-table">
-          <Songlist label="Results" songs={testData} />
+          <Songlist label="Results" songs={testData} addSong={addSong} />
         </div>
         <div className="song-table" >
           <div className="playlist-header">
@@ -74,7 +78,7 @@ function App() {
               onChange={namePlaylist}
             />
           </div>
-          <Songlist songs={testData.slice(0,3)}/>
+          <Songlist songs={currentPlaylist}/>
           <Button label="Add playlist"></Button>
         </div>
 
