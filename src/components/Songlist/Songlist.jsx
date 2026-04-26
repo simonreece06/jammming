@@ -6,14 +6,14 @@ import Track from '../Track/Track.jsx'
 
 
 
-const Songlist = ({ label, songs, addSong}) => {
+const Songlist = ({ tableLabel, songs, actionSong, buttonLabel}) => {
     return (
 
     <div className="song-list">
-      <h3>{label}</h3>
+      <h3>{tableLabel}</h3>
       {songs.map(song => (
     <div key={song.id}>
-        <Track track={song} addSong = {addSong}/>
+        <Track track={song} actionSong={actionSong} buttonLabel={buttonLabel}/>
     </div>
     ))}
     </div>

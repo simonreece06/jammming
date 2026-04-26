@@ -2,9 +2,9 @@ import "./Track.css"
 import Button from '../Button/Button.jsx';
 
 
-const Track = ({ track, addSong }) => {
+const Track = ({ track, actionSong, buttonLabel }) => {
     const onClick = () => {
-        addSong(track);
+        actionSong(track);
 
     }
     return (
@@ -15,7 +15,7 @@ const Track = ({ track, addSong }) => {
             </div>
             <div className="song-length">
                 <p>{track.length}</p>
-                <Button className="song-add-button" label="+" onClick={onClick}/>
+                <Button className="song-add-button" buttonLabel={buttonLabel} onClick={onClick}/>
             </div>
   
         </div>

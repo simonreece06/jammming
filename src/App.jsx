@@ -55,6 +55,12 @@ function App() {
     setCurrentPlaylist(prev => [...prev, track]);
   }
 
+  const removeSong= (trackToRemove) => {
+    setCurrentPlaylist(prev => 
+      prev.filter(track => track.id !== trackToRemove.id)
+    );
+  }
+
 
 
 
@@ -66,7 +72,7 @@ function App() {
 
       <div className="results">
         <div className="song-table">
-          <Songlist label="Results" songs={testData} addSong={addSong} />
+          <Songlist tableLabel="Results" songs={testData} actionSong={addSong} buttonLabel="+"/>
         </div>
         <div className="song-table" >
           <div className="playlist-header">
@@ -78,8 +84,8 @@ function App() {
               onChange={namePlaylist}
             />
           </div>
-          <Songlist songs={currentPlaylist}/>
-          <Button label="Add playlist"></Button>
+          <Songlist songs={currentPlaylist} actionSong={removeSong} buttonLabel="-"/>
+          <Button buttonLabel="Add playlist"></Button>
         </div>
 
         
