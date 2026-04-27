@@ -1,55 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import Title from './components/Title/Title.jsx';
 import SearchBar from './components/SearchBar/SearchBar.jsx';
 import Songlist from './components/Songlist/Songlist.jsx';
 import Button from './components/Button/Button.jsx';
-
-let testData = [
-    {
-        id: 1,
-        artist: "Justin Bieber",
-        name: 'Sorry',
-        length: 5,
-        album: "Sorry"
-    },
-    {
-        id: 2,
-        artist: "APC",
-        name: 'The Noose',
-        length: 4,
-        album: "Thirteenth Step"
-    },
-    {
-        id: 3,
-        artist: "Red",
-        name: 'Faceless',
-        length: 3.5,
-        album: 'The Faceless'
-    },
-    {
-        id: 4,
-        artist: "VERY LONG ARTIST NAME WHAT THE ...",
-        name: 'VERY LONG NAME ON THE TRACK TOO ...',
-        length: 3.5,
-        album: 'WHAT WHY IS EVEYRTHING SO LONG'
-    },
-
-];
-
-
-
-
+import { logIn, getToken } from './services/Spotify.js';
+import testData from './testData.js';
 
 function App() {
   const [results, setResults] = useState(testData);
   const [playlistName, setPlaylistName] = useState("Your Playlist");
   const [currentPlaylist, setCurrentPlaylist] = useState([]);
-
+  const [token, setToken] = useState(null);
+  const [tokenExpiry, setTokenExpiry] = useState(null)
   
   const namePlaylist = (e) => {
-    setPlaylistName(e.target.value);
-  }
+    setPlaylistName(e.target.value);  }
 
   const addSong = (track) => {
     setCurrentPlaylist(prev => [...prev, track]);
@@ -60,6 +26,34 @@ function App() {
       prev.filter(track => track.id !== trackToRemove.id)
     );
   }
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      console.log('test');
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      if (!code) {
+        return;
+      }
+      if (token) {
+        return;
+      }
+      const obtainedToken = await getToken(code);
+      setToken(obtainedToken.access_token);
+      setToken(Date.now() + obtainedToken.expires_in * 1000);
+      window.history.replaceState({}, document.title, "/");
+
+
+
+    }
+
+    fetchToken();
+    
+
+
+
+
+  },[]);
 
 
 
@@ -72,7 +66,7 @@ function App() {
 
       <div className="results">
         <div className="song-table">
-          <Songlist tableLabel="Results" songs={testData} actionSong={addSong} buttonLabel="+"/>
+          <Songlist tableLabel="Results" songs={testData} actionSong={logIn} buttonLabel="+"/>
         </div>
         <div className="song-table" >
           <div className="playlist-header">
