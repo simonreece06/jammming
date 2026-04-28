@@ -10,7 +10,7 @@ const logIn = () => {
     response_type: 'code',
     redirect_uri: redirectUri,
     state: state,
-    scope: "user-read-email user-read-private playlist-read-private playlist-read-collaborative",
+    scope: "user-read-email user-read-private playlist-read-private playlist-read-collaborative playlist-modify-private",
     })
 
     let authURL = "https://accounts.spotify.com/authorize?" + params.toString();
@@ -22,7 +22,6 @@ const logIn = () => {
 
 
 const getToken = async (code) => {
-
     const tokenEndpoint = 'https://accounts.spotify.com/api/token';
     const responseToken = await fetch(tokenEndpoint, {
         method: "POST",
@@ -35,10 +34,8 @@ const getToken = async (code) => {
             code: code,
             redirect_uri: redirectUri
         })
-    })
-    
+    })    
     const data = await responseToken.json();
-
 
     if (!responseToken.ok) {
         throw new Error(data.error_description || "Token request failed");
@@ -49,5 +46,36 @@ const getToken = async (code) => {
     return data;
 }
 
+const addPlaylistToSpotify = async (authCode, playlistName) => {   
+    //first we need to create an empty playlist
+    const endPoint = 'https://api.spotify.com/v1/me/playlists'
+    const responseToken = await fetch(endPoint, {
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${authCode}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'name': playlistName,
+            'description': 'testing',
+            'public': false
+        })
+    })
 
-export { logIn, getToken };
+    const data = await responseToken.json();
+
+    if (!responseToken.ok) {
+        throw new Error(data.error_description ||"Token request for creating original playlist failed");
+    }
+
+    console.log("success");
+    return data;
+
+}
+
+
+
+
+
+
+export { logIn, getToken, addPlaylistToSpotify };

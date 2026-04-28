@@ -4,12 +4,12 @@ import Title from './components/Title/Title.jsx';
 import SearchBar from './components/SearchBar/SearchBar.jsx';
 import Songlist from './components/Songlist/Songlist.jsx';
 import Button from './components/Button/Button.jsx';
-import { logIn, getToken } from './services/Spotify.js';
+import { logIn, getToken, addPlaylistToSpotify } from './services/Spotify.js';
 import testData from './testData.js';
 
 function App() {
   const [results, setResults] = useState(testData);
-  const [playlistName, setPlaylistName] = useState("Your Playlist");
+  const [playlistName, setPlaylistName] = useState("statePlaylist Name");
   const [currentPlaylist, setCurrentPlaylist] = useState([]);
   const [token, setToken] = useState(null);
   const [tokenExpiry, setTokenExpiry] = useState(null)
@@ -29,7 +29,6 @@ function App() {
 
   useEffect(() => {
     const fetchToken = async () => {
-      console.log('test');
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
       if (!code) {
@@ -40,20 +39,47 @@ function App() {
       }
       const obtainedToken = await getToken(code);
       setToken(obtainedToken.access_token);
-      setToken(Date.now() + obtainedToken.expires_in * 1000);
+      setTokenExpiry(Date.now() + obtainedToken.expires_in * 1000);
       window.history.replaceState({}, document.title, "/");
+    }
+    fetchToken();
+  },[token]);
 
-
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+    const pendingPlaylist = localStorage.getItem("pendingPlaylist");
+    if (pendingPlaylist) {
+      
+      addPlaylistToSpotify(token, pendingPlaylist);
+      localStorage.removeItem("pendingPlaylist");
 
     }
 
-    fetchToken();
-    
+  }, [token])
+  
 
 
 
 
-  },[]);
+
+  const addPlaylist = () => {
+    //first check if we need a new token
+    if (tokenExpiry && Date.now() > tokenExpiry) {
+      logIn();
+      localStorage.setItem("pendingPlaylist", playlistName);
+      return
+    }
+    if (!token) {
+      logIn();
+      localStorage.setItem("pendingPlaylist", playlistName);
+      return;
+    }
+    addPlaylistToSpotify(token, playlistName);
+
+
+  }
 
 
 
@@ -66,7 +92,7 @@ function App() {
 
       <div className="results">
         <div className="song-table">
-          <Songlist tableLabel="Results" songs={testData} actionSong={logIn} buttonLabel="+"/>
+          <Songlist tableLabel="Results" songs={testData} actionSong={addSong} buttonLabel="+"/>
         </div>
         <div className="song-table" >
           <div className="playlist-header">
@@ -79,7 +105,7 @@ function App() {
             />
           </div>
           <Songlist songs={currentPlaylist} actionSong={removeSong} buttonLabel="-"/>
-          <Button buttonLabel="Add playlist"></Button>
+          <Button buttonLabel="Add playlist" onClick={addPlaylist}></Button>
         </div>
 
         
