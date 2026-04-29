@@ -3,19 +3,14 @@ import { useState } from 'react'
 
 
 
-const SearchBar = () => {
-    const [text, setText] = useState("");
-
-    const changeText = (e) => {
-        setText(e.target.value);
-    }
+const SearchBar = ({ value, onChange}) => {
     return (
         <div>
             <input
               type="text"
               placeholder="test"
-              value={text}
-              onChange={changeText}
+              value={value}
+              onChange={onChange}
               
             />
 

@@ -4,6 +4,8 @@ const clientSecret = "76449834d8a74722aecdecc062b9bfb8";
 const state = crypto.randomUUID()
 localStorage.setItem("spotify_auth_state", state);
 
+import testData from '../testData.js';
+
 const logIn = () => {
     const params = new URLSearchParams({
     client_id: clientID,
@@ -73,9 +75,54 @@ const addPlaylistToSpotify = async (authCode, playlistName) => {
 
 }
 
+const searchSpotify = async (token, query) => {
+    try {
+        const params = new URLSearchParams({
+            q: query,
+            type: "track",
+            limit: 5
+        })    
+            const endPoint = `https://api.spotify.com/v1/search?${params.toString()}`;
+            const responseToken = await fetch(endPoint, {
+                method: "GET",
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+        }
+        })
+
+        const data = await responseToken.json();
+
+        if (!responseToken.ok) {
+        throw new Error(data.error_description || "Search Failed");
+        }
+        console.log("search success");
+        console.log([data.tracks.items[0].name, data.tracks.items[1].name]);
+        const formattedResults = data.tracks.items.map(song => {        
+            return {
+                id: song.id,
+                artist: song.artists?.[0]?.name,
+                name: song.name,
+                length: `${Math.floor(song.duration_ms / 60000)}:${Math.floor((song.duration_ms % 60000) / 1000).toString().padStart(2, "0")}`,
+                album: song.album.name
+                
+            }
+    })
+        //console.log(formattedResults);
+        //console.log(testData)
+
+        return formattedResults;
+    }
+
+    catch (error) {
+        console.error("GET Error", error);
+        throw error;
+    }
+    }
+    
 
 
 
 
 
-export { logIn, getToken, addPlaylistToSpotify };
+
+export { logIn, getToken, addPlaylistToSpotify, searchSpotify };
