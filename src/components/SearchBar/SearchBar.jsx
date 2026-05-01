@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import "./SearchBar.css";
 
 
 
 
 const SearchBar = ({ value, onChange}) => {
     return (
-        <div>
+
             <input
               type="text"
               placeholder="test"
@@ -14,7 +14,7 @@ const SearchBar = ({ value, onChange}) => {
               
             />
 
-        </div>
+
     )
 }
 

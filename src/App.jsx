@@ -9,59 +9,73 @@ import testData from './testData.js';
 
 function App() {
   const [results, setResults] = useState([]);
-  const [playlistName, setPlaylistName] = useState("statePlaylist Name");
+  const [playlistName, setPlaylistName] = useState("Your Playlist");
   const [currentPlaylist, setCurrentPlaylist] = useState([]);
   const [token, setToken] = useState(null);
   const [tokenExpiry, setTokenExpiry] = useState(null)
   const [query, setQuery] = useState("");
+
   
   const namePlaylist = (e) => {
-    setPlaylistName(e.target.value);  }
+    setPlaylistName(e.target.value);  
+  }
 
   const addSong = (track) => {
-    if (currentPlaylist.some(song => song.id === track))
-    setCurrentPlaylist(prev => [...prev, track]);
-    
+    if (!currentPlaylist.some(song => song.id === track.id)){
+      const newPlaylist = [...currentPlaylist, track];
+      setCurrentPlaylist(newPlaylist);
+      sessionStorage.setItem("playlist", JSON.stringify(newPlaylist));
+    }
+
+      
   }
 
   const removeSong= (trackToRemove) => {
-    setCurrentPlaylist(prev => 
-      prev.filter(track => track.id !== trackToRemove.id)
-    );
+    const update = currentPlaylist.filter(track => track.id !== trackToRemove.id);
+    setCurrentPlaylist(update);
+    sessionStorage.setItem("playlist", JSON.stringify(update));
+
+
   }
 
-  useEffect(() => {
+  useEffect(() => {    
     const fetchToken = async () => {
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
       if (!code) {
         return;
       }
-      if (token) {
-        return;
-      }
+
       const obtainedToken = await getToken(code);
       setToken(obtainedToken.access_token);
-      setTokenExpiry(Date.now() + obtainedToken.expires_in * 1000);
+      const expiry = Date.now() + obtainedToken.expires_in * 1000;
+      setTokenExpiry(expiry);
       window.history.replaceState({}, document.title, "/");
+      localStorage.setItem("token", obtainedToken.access_token);
+      localStorage.setItem("expiry", expiry)
     }
-    fetchToken();
-  },[token]);
+    fetchToken();    
+  },[]);
 
   useEffect(() => {
-    if (!token) {
+    //this gets a token after getting auth code
+    const localToken = localStorage.getItem("token");
+    const localExpiry = localStorage.getItem("expiry");
+    if (localToken) {
+      setToken(localToken);
+      setTokenExpiry(localExpiry);      
       return;
     }
-    const pendingPlaylist = localStorage.getItem("pendingPlaylist");
-    if (pendingPlaylist) {
-      
-      addPlaylistToSpotify(token, pendingPlaylist);
-      localStorage.removeItem("pendingPlaylist");
+  },[])
 
+
+  useEffect(() => {
+    //load old custom playlist
+    const previousPlaylist = JSON.parse(sessionStorage.getItem("playlist"));
+    if (previousPlaylist) {
+      setCurrentPlaylist(previousPlaylist);
     }
-
-  }, [token])
-  
+  },[])
 
 
 
@@ -69,28 +83,23 @@ function App() {
 
   const addPlaylist = () => {
     //first check if we need a new token
-    if (tokenExpiry && Date.now() > tokenExpiry) {
+    if (tokenExpiry && Date.now() > tokenExpiry || !token) {
       logIn();
-      localStorage.setItem("pendingPlaylist", playlistName);
       return
-    }
-    if (!token) {
-      logIn();
-      localStorage.setItem("pendingPlaylist", playlistName);
-      return;
-    }
+    }    
     addPlaylistToSpotify(token, playlistName);
   }
 
   const spotifyResults = async () => {
+
+    if (!token) {
+      logIn();
+      return;
+    }
     if (!query) {
       return;
     }
 
-    if (query && !token) {
-      logIn();
-      return;
-    }
     const results = await searchSpotify(token, query);
     setResults(results);
 
@@ -102,16 +111,26 @@ function App() {
   }
 
   useEffect(() => {
-    if (!query || !token){
+    if (!token) {
       return;
     }
     const theTimer = setTimeout(() => {
       spotifyResults();
-    },400);
+    }, 500);
 
     return () => clearTimeout(theTimer);
 
   },[query]);
+
+  //search button label
+
+  const whichSearchLabel = () => {
+    if (!token) {
+      return "Login to Spotify";
+    } else {
+      return "Auto-search";
+    }
+  }
 
 
 
@@ -123,8 +142,11 @@ function App() {
   return (
     <div>
       <Title />
-      <SearchBar value="test" value={query} onChange={changeQuery} />
-      <Button buttonLabel="Search" onClick={spotifyResults}></Button>
+      <div className="search-bar-container">
+        <SearchBar value={query} onChange={changeQuery} />
+        <Button className="search-bar-button" buttonLabel={whichSearchLabel()} onClick={spotifyResults}></Button>
+      </div>
+
 
       <div className="results">
         <div className="song-table">
