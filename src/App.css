@@ -230,3 +230,8 @@
 .search-bar-button {
   height:
 }
+
+.button-container {
+  display: flex;
+  gap: 3px;
+}

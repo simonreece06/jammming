@@ -21,7 +21,7 @@ const Track = ({ track, actionSong, buttonLabel,  results, playlist}) => {
     return (
         <div className="track">
             <div className="artist">
-                <h3>{track.name}</h3>
+                <h3>{track.name}</h3>+
                 <p>{track.artist} | {track.album}</p>
             </div>
             <div className="song-length">

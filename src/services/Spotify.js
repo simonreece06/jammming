@@ -46,11 +46,21 @@ const getToken = async (code) => {
     console.log(`my token is ${data.access_token}`);
     
     return data;
+    
 }
 
-const addPlaylistToSpotify = async (authCode, playlistName) => {   
+//function to turn selected tracks into array of uris
+
+const selectedSongsURIs = (songs) => {
+    //console.log(songs);
+    const uris = songs.map(song => song.uri);
+    //console.log(uris);
+    return uris;
+}
+
+const addPlaylistToSpotify = async (authCode, playlistName, songs) => {   
     //first we need to create an empty playlist
-    const endPoint = 'https://api.spotify.com/v1/me/playlists'
+    const endPoint = 'https://api.spotify.com/v1/me/playlists';
     const responseToken = await fetch(endPoint, {
         method: "POST",
         headers: {
@@ -70,8 +80,28 @@ const addPlaylistToSpotify = async (authCode, playlistName) => {
         throw new Error(data.error_description ||"Token request for creating original playlist failed");
     }
 
-    console.log("success");
-    return data;
+    //console.log("success");
+    //return data;
+    //now we add to this playlist
+    const playlistId = data.id;
+
+    const secondEndPoint = `https://api.spotify.com/v1/playlists/${playlistId}/items`;
+    const secondResponseToken = await fetch(secondEndPoint, {
+        method: "POST",
+        headers: {
+            'Authorization': `Bearer ${authCode}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            position: 0,
+            uris:songs
+        })
+    })
+
+    const secondData = await secondResponseToken.json();
+    return secondData;
+    //console.log(songs);
+    
 
 }
 
@@ -95,15 +125,16 @@ const searchSpotify = async (token, query) => {
         if (!responseToken.ok) {
         throw new Error(data.error_description || "Search Failed");
         }
-        console.log("search success");
-        console.log([data.tracks.items[0].name, data.tracks.items[1].name]);
+        //console.log("search success");
+        //console.log([data.tracks.items[0].name, data.tracks.items[1].name]);
         const formattedResults = data.tracks.items.map(song => {        
             return {
                 id: song.id,
                 artist: song.artists?.[0]?.name,
                 name: song.name,
                 length: `${Math.floor(song.duration_ms / 60000)}:${Math.floor((song.duration_ms % 60000) / 1000).toString().padStart(2, "0")}`,
-                album: song.album.name
+                album: song.album?.name,
+                uri: song.uri
                 
             }
     })
@@ -125,4 +156,4 @@ const searchSpotify = async (token, query) => {
 
 
 
-export { logIn, getToken, addPlaylistToSpotify, searchSpotify };
+export { logIn, getToken, addPlaylistToSpotify, searchSpotify, selectedSongsURIs };

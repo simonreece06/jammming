@@ -1,3 +1,11 @@
 .search-bar-button{
     flex: 0.25;
 }
+
+.add-playlist-button{
+    flex: 0.75;
+}
+
+.clear-button{
+    flex: 0.25;
+}

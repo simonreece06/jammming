@@ -4,7 +4,7 @@ import Title from './components/Title/Title.jsx';
 import SearchBar from './components/SearchBar/SearchBar.jsx';
 import Songlist from './components/Songlist/Songlist.jsx';
 import Button from './components/Button/Button.jsx';
-import { logIn, getToken, addPlaylistToSpotify, searchSpotify } from './services/Spotify.js';
+import { logIn, getToken, addPlaylistToSpotify, searchSpotify, selectedSongsURIs } from './services/Spotify.js';
 import testData from './testData.js';
 
 function App() {
@@ -14,46 +14,75 @@ function App() {
   const [token, setToken] = useState(null);
   const [tokenExpiry, setTokenExpiry] = useState(null)
   const [query, setQuery] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
 
   
   const namePlaylist = (e) => {
     setPlaylistName(e.target.value);  
   }
 
-  const addSong = (track) => {
-    if (!currentPlaylist.some(song => song.id === track.id)){
-      const newPlaylist = [...currentPlaylist, track];
-      setCurrentPlaylist(newPlaylist);
-      sessionStorage.setItem("playlist", JSON.stringify(newPlaylist));
-    }
+const addSong = (track) => {
+  setCurrentPlaylist(prev => {
+    if (prev.some(song => song.id === track.id)) return prev;
+    const updated = [...prev, track];
+    return updated;
+  });
+};
 
-      
+useEffect(() => {
+  const raw = sessionStorage.getItem("playlist");
+  if (raw) {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      setCurrentPlaylist(parsed);
+    }
   }
+  setHydrated(true);
+},[]);
+useEffect(() => {
+  if (!hydrated) return;
+
+  sessionStorage.setItem("playlist", JSON.stringify(currentPlaylist));
+}, [currentPlaylist, hydrated]);
+
 
   const removeSong= (trackToRemove) => {
-    const update = currentPlaylist.filter(track => track.id !== trackToRemove.id);
-    setCurrentPlaylist(update);
-    sessionStorage.setItem("playlist", JSON.stringify(update));
-
-
+    setCurrentPlaylist(prev => {      
+      const updated = prev.filter(song => song.id !== trackToRemove.id);
+      sessionStorage.setItem("playlist", JSON.stringify(updated));
+      return updated;
+    })
   }
 
   useEffect(() => {    
     const fetchToken = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-      if (!code) {
-        return;
-      }
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        if (!code) {
+          return;
+        }
 
-      const obtainedToken = await getToken(code);
-      setToken(obtainedToken.access_token);
-      const expiry = Date.now() + obtainedToken.expires_in * 1000;
-      setTokenExpiry(expiry);
-      window.history.replaceState({}, document.title, "/");
-      localStorage.setItem("token", obtainedToken.access_token);
-      localStorage.setItem("expiry", expiry)
-    }
+        const obtainedToken = await getToken(code);
+        if (!obtainedToken || !obtainedToken.access_token) {
+          throw new Error("Failed to get access token");
+        }
+        setToken(obtainedToken.access_token);
+        const expiry = Date.now() + obtainedToken.expires_in * 1000;
+        setTokenExpiry(expiry);
+        window.history.replaceState({}, document.title, "/");
+        localStorage.setItem("token", obtainedToken.access_token);
+        localStorage.setItem("expiry", expiry)
+        } catch (err) {
+          console.error("Token fetch failed:", err);
+        }
+ 
+
+ 
+      }
+      
+        
     fetchToken();    
   },[]);
 
@@ -72,26 +101,25 @@ function App() {
   useEffect(() => {
     //load old custom playlist
     const previousPlaylist = JSON.parse(sessionStorage.getItem("playlist"));
-    if (previousPlaylist) {
+    if (Array.isArray(previousPlaylist)) {
       setCurrentPlaylist(previousPlaylist);
     }
   },[])
-
-
-
-
 
   const addPlaylist = () => {
     //first check if we need a new token
     if (tokenExpiry && Date.now() > tokenExpiry || !token) {
       logIn();
       return
-    }    
-    addPlaylistToSpotify(token, playlistName);
+    }
+    //first we generate a list of URIs
+    const uris = selectedSongsURIs(currentPlaylist);
+    addPlaylistToSpotify(token, playlistName, uris);
+    setPlaylistName("Start your next playlist...");
+    setCurrentPlaylist([]);
   }
 
   const spotifyResults = async () => {
-
     if (!token) {
       logIn();
       return;
@@ -99,15 +127,17 @@ function App() {
     if (!query) {
       return;
     }
-
+    if (tokenExpiry && Date.now() > tokenExpiry || !token) {
+      logIn();
+      return
+    }
     const results = await searchSpotify(token, query);
     setResults(results);
-
   }
 
   const changeQuery = (e) => {
     setQuery(e.target.value);
-    console.log('succ'); 
+    //console.log('succ'); 
   }
 
   useEffect(() => {
@@ -117,13 +147,10 @@ function App() {
     const theTimer = setTimeout(() => {
       spotifyResults();
     }, 500);
-
     return () => clearTimeout(theTimer);
-
   },[query]);
 
   //search button label
-
   const whichSearchLabel = () => {
     if (!token) {
       return "Login to Spotify";
@@ -132,12 +159,19 @@ function App() {
     }
   }
 
+  const clearCurrentPlaylist = () => {
+    setCurrentPlaylist([]);
+    setPlaylistName("Start your next playlist");
+  }
 
-
-  
-
-
-
+  const whichClearLabel = () => {
+    if (currentPlaylist.length === 0) {
+      return ""
+    }
+    else {
+      return "Clear Playlist";
+    }
+  }
 
   return (
     <div>
@@ -163,7 +197,10 @@ function App() {
             />
           </div>
           <Songlist songs={currentPlaylist} results={results} playlist={currentPlaylist} actionSong={removeSong} buttonLabel="-"/>
-          <Button buttonLabel="Add playlist" onClick={addPlaylist}></Button>
+          <div className="button-container">
+            <Button className="add-playlist-button" buttonLabel="Add playlist" onClick={addPlaylist}></Button><Button buttonLabel={whichClearLabel()} className="clear-button" onClick={clearCurrentPlaylist}></Button>
+          </div>
+          
         </div>
 
         
