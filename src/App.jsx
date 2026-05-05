@@ -8,15 +8,34 @@ import { logIn, getToken, addPlaylistToSpotify, searchSpotify, selectedSongsURIs
 import testData from './testData.js';
 
 function App() {
+
   const [results, setResults] = useState([]);
   const [playlistName, setPlaylistName] = useState("Your Playlist");
   const [currentPlaylist, setCurrentPlaylist] = useState([]);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => {
+    const oldToken = localStorage.getItem("token");
+    if (oldToken) {
+      return oldToken;
+    } else {
+      return null;
+    }
+  });
   const [tokenExpiry, setTokenExpiry] = useState(null)
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => {
+    const oldQuery = sessionStorage.getItem("query");
+    if (oldQuery) {
+      console.log(`first sessionStorage is ${oldQuery}`);
+      return oldQuery;
+    } else {
+      return "";
+    }
+  });
   const [hydrated, setHydrated] = useState(false);
+  const [toast, setToast] = useState("asd");
 
+  //run search if query is not empty, on a refresh
 
+  
   
   const namePlaylist = (e) => {
     setPlaylistName(e.target.value);  
@@ -71,7 +90,7 @@ useEffect(() => {
         setToken(obtainedToken.access_token);
         const expiry = Date.now() + obtainedToken.expires_in * 1000;
         setTokenExpiry(expiry);
-        window.history.replaceState({}, document.title, "/");
+
         localStorage.setItem("token", obtainedToken.access_token);
         localStorage.setItem("expiry", expiry)
         } catch (err) {
@@ -85,6 +104,13 @@ useEffect(() => {
         
     fetchToken();    
   },[]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+     window.history.replaceState({}, document.title, "/");
+  },[token]);
 
   useEffect(() => {
     //this gets a token after getting auth code
@@ -109,25 +135,41 @@ useEffect(() => {
   const addPlaylist = () => {
     //first check if we need a new token
     if (tokenExpiry && Date.now() > tokenExpiry || !token) {
+      
       logIn();
       return
     }
     //first we generate a list of URIs
+    if (currentPlaylist.length === 0) {
+      alert("Add at least one song to create a playlist.");
+      return;
+    }
     const uris = selectedSongsURIs(currentPlaylist);
     addPlaylistToSpotify(token, playlistName, uris);
+    setToast("Playlist added!");
+    setTimeout(() => setToast(""), 3000);
     setPlaylistName("Start your next playlist...");
     setCurrentPlaylist([]);
   }
 
+
+
   const spotifyResults = async () => {
     if (!token) {
+      console.log("1");
+      sessionStorage.setItem("query", query);
+      const testValue = sessionStorage.getItem("query");
+      console.log(`session Storage is ${testValue}`);
       logIn();
+      console.log(`session Storage is ${testValue}`);
       return;
     }
     if (!query) {
+      console.log("2");
       return;
     }
     if (tokenExpiry && Date.now() > tokenExpiry || !token) {
+      console.log("3");
       logIn();
       return
     }
@@ -137,6 +179,7 @@ useEffect(() => {
 
   const changeQuery = (e) => {
     setQuery(e.target.value);
+    sessionStorage.setItem("query", e.target.value);
     //console.log('succ'); 
   }
 
@@ -144,15 +187,20 @@ useEffect(() => {
     if (!token) {
       return;
     }
+    if (!query) {
+      return
+    }
+
     const theTimer = setTimeout(() => {
       spotifyResults();
     }, 500);
     return () => clearTimeout(theTimer);
-  },[query]);
+  },[token, query]);
+  
 
   //search button label
   const whichSearchLabel = () => {
-    if (!token) {
+    if (!token || tokenExpiry && Date.now() > tokenExpiry ) {
       return "Login to Spotify";
     } else {
       return "Auto-search";
@@ -170,6 +218,14 @@ useEffect(() => {
     }
     else {
       return "Clear Playlist";
+    }
+  }
+
+  const disabledAddPlaylist = () => {
+    if (!token || tokenExpiry && Date.now() > tokenExpiry){
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -198,8 +254,9 @@ useEffect(() => {
           </div>
           <Songlist songs={currentPlaylist} results={results} playlist={currentPlaylist} actionSong={removeSong} buttonLabel="-"/>
           <div className="button-container">
-            <Button className="add-playlist-button" buttonLabel="Add playlist" onClick={addPlaylist}></Button><Button buttonLabel={whichClearLabel()} className="clear-button" onClick={clearCurrentPlaylist}></Button>
+            <Button className="add-playlist-button"  buttonLabel="Add playlist" disabled={disabledAddPlaylist()} onClick={addPlaylist}></Button><Button buttonLabel={whichClearLabel()} className="clear-button" onClick={clearCurrentPlaylist}></Button>
           </div>
+          {toast && <div className="toast">{toast}</div>}
           
         </div>
 

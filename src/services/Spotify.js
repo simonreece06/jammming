@@ -18,6 +18,7 @@ const logIn = () => {
     let authURL = "https://accounts.spotify.com/authorize?" + params.toString();
 
     window.location.href = authURL;
+    
 
 }
 
