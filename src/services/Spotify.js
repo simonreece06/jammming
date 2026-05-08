@@ -1,5 +1,5 @@
 const clientID = "d4a76c88bc7c44969e8791474cc99fdc";
-const redirectUri = "http://127.0.0.1:5173/";
+const redirectUri = "https://jammmingsr.netlify.app/";
 const clientSecret = "76449834d8a74722aecdecc062b9bfb8";
 const state = crypto.randomUUID()
 localStorage.setItem("spotify_auth_state", state);
